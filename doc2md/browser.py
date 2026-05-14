@@ -89,16 +89,17 @@ def get_browser_html(projects: list[str]) -> str:
             const res = await fetch(`/browser/projects/${{projectId}}/files`);
             const data = await res.json();
             fileList.innerHTML = data.files.map(f =>
-                `<li><a href="#" onclick="loadFile('${projectId}', '${{f}}'); return false;">${{f}}</a></li>`
+                `<li><a href="#" onclick="loadFile('${{projectId}}', '$'+encodeURIComponent(f)+''); return false;">${{f}}</a></li>`
             ).join('');
         }}
 
         async function loadFile(projectId, filename) {{
             const res = await fetch(`/browser/projects/${{projectId}}/files/${{encodeURIComponent(filename)}}`);
             const data = await res.json();
-            preview.innerHTML = '<div class="markdown-body">' + marked.parse(data.content) + '</div>';
-            hljs.highlightAll();
-            renderMathInElement(preview, {{ delimiters: [
+            const parsedContent = marked.parse(data.content);
+            preview.innerHTML = '<div class="markdown-body">' + parsedContent + '</div>';
+            if (window.hljs) hljs.highlightAll();
+            if (window.renderMathInElement) renderMathInElement(preview, {{ delimiters: [
                 {{left: '$$', right: '$$', display: true}},
                 {{left: '$', right: '$', display: false}}
             ]}});

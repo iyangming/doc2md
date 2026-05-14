@@ -28,7 +28,8 @@ def convert(
     output_dir.mkdir(parents=True, exist_ok=True)
 
     try:
-        processor = get_processor(str(file_path))
+        processor_class = get_processor(str(file_path))
+        processor = processor_class(project_id=project_id, ocr_mode=ocr_mode)
         result = processor.process(str(file_path))
 
         typer.echo(f"✓ Converted: {result.filename}")
@@ -68,7 +69,8 @@ def batch(
             continue
 
         try:
-            processor = get_processor(str(file_path))
+            processor_class = get_processor(str(file_path))
+            processor = processor_class(project_id=project_id, ocr_mode=ocr_mode)
             result = processor.process(str(file_path))
             typer.echo(f"✓ {result.filename}")
             success += 1

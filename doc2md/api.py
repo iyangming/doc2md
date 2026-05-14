@@ -103,7 +103,8 @@ async def convert(
     temp_path.write_bytes(content)
 
     try:
-        processor = get_processor(str(temp_path))
+        processor_class = get_processor(str(temp_path))
+        processor = processor_class(project_id=project_id, ocr_mode=ocr_mode)
         result = processor.process(str(temp_path))
 
         return {
@@ -142,7 +143,8 @@ async def convert_batch(
         temp_path.write_bytes(content)
 
         try:
-            processor = get_processor(str(temp_path))
+            processor_class = get_processor(str(temp_path))
+            processor = processor_class(project_id=project_id, ocr_mode=ocr_mode)
             result = processor.process(str(temp_path))
             results.append({
                 "filename": result.filename,

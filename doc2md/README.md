@@ -28,16 +28,16 @@ pip install -r requirements.txt
 
 ```bash
 # 转换单个文件
-python cli.py convert document.docx
+python -m doc2md.cli convert document.docx
 
 # 批量转换
-python cli.py convert file1.docx file2.pdf file3.xlsx
+python -m doc2md.cli convert file1.docx file2.pdf file3.xlsx
 
 # 列出所有项目
-python cli.py list-projects
+python -m doc2md.cli list-projects
 
 # 启动 Web 服务
-python cli.py serve
+python -m doc2md.cli serve
 ```
 
 ### API 服务

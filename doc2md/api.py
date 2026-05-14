@@ -29,7 +29,8 @@ app.add_middleware(
 if HAS_BROWSER:
     app.include_router(browser_router)
 
-app.mount("/static", StaticFiles(directory="static"), name="static")
+static_path = Path(__file__).parent / "static"
+app.mount("/static", StaticFiles(directory=str(static_path)), name="static")
 
 Path(config.PROJECTS_DIR).mkdir(exist_ok=True)
 Path(config.ASSETS_DIR).mkdir(exist_ok=True)

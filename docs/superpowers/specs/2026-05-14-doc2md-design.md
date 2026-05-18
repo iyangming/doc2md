@@ -1,7 +1,8 @@
 # Document to Markdown 转换系统设计
 
 **日期**：2026-05-14
-**状态**：待用户确认
+**更新**：2026-05-19（新增 Web 前端）
+**状态**：已实现
 
 ---
 
@@ -17,11 +18,11 @@
 ## 2. 系统架构
 
 ```
-输入文件 → CLI/API/Web → 处理器引擎 → Markdown 输出
-                                    ↓
-                              ./projects/{timestamp}/
-                                    ↓
-                              assets/ + output.md
+输入文件 → CLI/API/Web UI → 处理器引擎 → Markdown 输出
+                                        ↓
+                                  ./projects/{timestamp}/
+                                        ↓
+                                  assets/ + output.md
 ```
 
 **核心模块：**
@@ -30,7 +31,7 @@
 |------|------|------|
 | CLI | Typer | 命令行交互，支持批量转换 |
 | API | FastAPI + Swagger | REST API + Web 调试界面 |
-| Web | FastAPI Templates | Markdown 文件浏览和预览 |
+| Web UI | React + Vite + Tailwind | 现代化文档转换界面 |
 | 处理器引擎 | 统一接口 | 每种格式一个处理器 |
 | OCR | Tesseract + DeepSeek | 图片文字识别 |
 | 资产处理器 | 统一管理 | 图片提取、路径重写 |
@@ -84,6 +85,23 @@ doc2md/
 │   └── preview.html
 ├── requirements.txt
 └── Dockerfile
+
+web/                           # React 前端 (可选)
+├── src/
+│   ├── components/
+│   │   ├── FileUploader.tsx    # 文件上传组件
+│   │   └── MarkdownPreview.tsx # Markdown 预览组件
+│   │   └── ui/                # shadcn/ui 组件
+│   ├── hooks/
+│   │   └── useDocConverter.ts # 文档转换 Hook
+│   ├── types/
+│   │   └── doc2md.ts          # TypeScript 类型定义
+│   ├── App.tsx
+│   ├── App.css
+│   └── index.css
+├── package.json
+├── vite.config.ts
+└── tailwind.config.js
 ```
 
 **目录命名规则**：`{YYYY-MM-DD}-{HHMM}`（如 `2026-05-14-1430`）
@@ -94,7 +112,7 @@ doc2md/
 ## 5. 数据流
 
 ```
-用户上传文件（CLI/API）
+用户上传文件（CLI/API/Web UI）
     ↓
 创建项目目录 projects/{timestamp}/
     ↓
@@ -145,7 +163,7 @@ GET /files/{path:path}           # 静态文件服务（Markdown + 图片）
 GET /preview/{filename}          # Markdown 预览页面
 GET /api/files                   # 列出已转换的文件
 GET /api/projects                # 列出所有项目
-GET /api/projects/{id}            # 获取项目详情
+GET /api/projects/{id}           # 获取项目详情
 GET /formats                     # 支持的格式列表
 GET /health                      # 健康检查
 ```
@@ -162,9 +180,64 @@ DEEPSEEK_OCR_THRESHOLD=0.8  # 成功率阈值，低于此值触发 DeepSeek
 
 ---
 
-## 7. OCR 处理
+## 7. Web 前端
 
-### 7.1 模式
+### 7.1 技术栈
+
+- React 19 + TypeScript
+- Vite 7
+- Tailwind CSS v3
+- shadcn/ui 组件库
+- Lucide Icons
+
+### 7.2 核心功能
+
+- 拖拽上传文档文件
+- 支持多种格式：Word (.docx)、PDF、PowerPoint (.pptx)、Excel (.xlsx/.csv)
+- 实时 Markdown 预览
+- OCR 文字识别（可选模式）
+- 一键下载转换结果
+- 响应式设计，支持深色模式
+
+### 7.3 组件结构
+
+```
+src/components/
+├── FileUploader.tsx      # 文件上传 + 格式选择
+├── MarkdownPreview.tsx   # Markdown 实时预览
+└── ui/                   # shadcn/ui 组件
+    ├── button.tsx
+    ├── card.tsx
+    ├── dialog.tsx
+    └── ...
+
+src/hooks/
+└── useDocConverter.ts    # 调用后端 API 的 Hook
+
+src/types/
+└── doc2md.ts             # 类型定义
+```
+
+### 7.4 开发
+
+```bash
+cd web
+npm install
+npm run dev    # 开发服务器
+npm run build  # 生产构建
+```
+
+### 7.5 环境变量
+
+```
+VITE_API_BASE_URL=http://localhost:8000  # 后端 API 地址
+```
+
+---
+
+## 8. OCR 处理
+
+### 8.1 模式
 
 | 模式 | 输出 |
 |------|------|
@@ -172,7 +245,7 @@ DEEPSEEK_OCR_THRESHOLD=0.8  # 成功率阈值，低于此值触发 DeepSeek
 | `caption` | 图片描述文字 + 原图引用 |
 | `none` | 只提取图片，不 OCR |
 
-### 7.2 流程
+### 8.2 流程
 
 ```
 文档中的图片
@@ -188,7 +261,7 @@ DEEPSEEK_OCR_THRESHOLD=0.8  # 成功率阈值，低于此值触发 DeepSeek
 返回识别结果
 ```
 
-### 7.3 输出格式
+### 8.3 输出格式
 
 ```markdown
 ![image description](assets/doc1/image1.png)
@@ -201,15 +274,15 @@ DEEPSEEK_OCR_THRESHOLD=0.8  # 成功率阈值，低于此值触发 DeepSeek
 
 ---
 
-## 8. Markdown 质量
+## 9. Markdown 质量
 
-### 8.1 标题层级自动检测
+### 9.1 标题层级自动检测
 
 - Word 大纲结构 → Markdown H1-H6
 - 自动识别文档标题层级
 - 多级标题嵌套保持
 
-### 8.2 目录自动生成
+### 9.2 目录自动生成
 
 - 从标题自动生成 Markdown 目录
 - 输出格式：`[TOC]` 或完整目录列表
@@ -221,7 +294,7 @@ DEEPSEEK_OCR_THRESHOLD=0.8  # 成功率阈值，低于此值触发 DeepSeek
     - [三级标题](#三级标题)
 ```
 
-### 8.3 引用块保留
+### 9.3 引用块保留
 
 - Word blockquote → Markdown `>`
 - 支持多层引用嵌套
@@ -231,7 +304,7 @@ DEEPSEEK_OCR_THRESHOLD=0.8  # 成功率阈值，低于此值触发 DeepSeek
 > > 嵌套引用
 ```
 
-### 8.4 列表嵌套层级
+### 9.4 列表嵌套层级
 
 - 保留多层级的 ol/ul
 - 智能识别列表类型（有序/无序）
@@ -245,7 +318,7 @@ DEEPSEEK_OCR_THRESHOLD=0.8  # 成功率阈值，低于此值触发 DeepSeek
    - 子项
 ```
 
-### 8.5 任务列表
+### 9.5 任务列表
 
 - 识别 Word 中的 checkbox/任务
 - 转换为 Markdown 待办格式
@@ -255,7 +328,7 @@ DEEPSEEK_OCR_THRESHOLD=0.8  # 成功率阈值，低于此值触发 DeepSeek
 - [x] 已完成事项
 ```
 
-### 8.6 脚注/尾注
+### 9.6 脚注/尾注
 
 - 转为 Markdown 脚注语法
 
@@ -265,7 +338,7 @@ DEEPSEEK_OCR_THRESHOLD=0.8  # 成功率阈值，低于此值触发 DeepSeek
 [^1]: 脚注内容
 ```
 
-### 8.7 元数据提取（Front-matter）
+### 9.7 元数据提取（Front-matter）
 
 - 自动提取标题/作者/日期
 - 生成 YAML front-matter
@@ -280,7 +353,7 @@ date: 2026-05-14
 正文内容...
 ```
 
-### 8.8 表格转换（Excel → Markdown）
+### 9.8 表格转换（Excel → Markdown）
 
 ```markdown
 | 列1 | 列2 | 列3 |
@@ -293,7 +366,7 @@ date: 2026-05-14
 - 格式化数字（保留原样）
 - 表头识别
 
-### 8.9 公式支持（LaTeX）
+### 9.9 公式支持（LaTeX）
 
 ```markdown
 行内公式：$E = mc^2$
@@ -306,7 +379,7 @@ $$
 
 技术方案：保留 LaTeX 语法，渲染时用 KaTeX
 
-### 8.10 代码块语法高亮
+### 9.10 代码块语法高亮
 
 ```markdown
 ```python
@@ -317,41 +390,16 @@ def hello():
 
 技术方案：保留语法标记，渲染时用 highlight.js
 
-### 8.11 超链接保留
+### 9.11 超链接保留
 
 ```markdown
 [链接文字](https://example.com)
 ```
 
-### 8.12 图片 alt 文本
+### 9.12 图片 alt 文本
 
 - 优先使用 Word 里的 alt text 作为图片描述
 - 输出：`![alt text](path/to/image.png)`
-
----
-
-## 9. Web 预览界面
-
-### 9.1 路由
-
-- `/preview` - 文件浏览器 + 预览界面
-- URL 参数：`?project=2026-05-14-1430&file=doc1.md`
-
-### 9.2 功能
-
-- 左侧：项目列表 + 文件列表
-- 右侧：渲染后的 Markdown
-- 支持代码高亮（highlight.js）
-- 支持图片显示
-- 支持 LaTeX 公式（KaTeX）
-- 响应式布局
-
-### 9.3 技术选型
-
-- Markdown 渲染：marked.js
-- 代码高亮：highlight.js
-- 数学公式：KaTeX
-- 样式：纯 CSS（轻量）
 
 ---
 
@@ -383,6 +431,12 @@ Python 3.11
 ├── pytesseract      # 本地 OCR
 ├── requests         # DeepSeek API
 └── markdown         # Markdown 处理
+
+React 19 (前端)
+├── vite             # 构建工具
+├── tailwindcss      # 样式
+├── shadcn/ui        # UI 组件
+└── lucide-react     # 图标
 ```
 
 ---

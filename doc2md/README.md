@@ -7,7 +7,7 @@
 - **多格式支持**: Word (.docx), PDF, PowerPoint (.pptx/.ppt), Excel (.xlsx/.xls/.csv)
 - **CLI 工具**: 简洁的命令行界面，支持单个和批量转换
 - **API 服务**: FastAPI 构建的 REST API，带 Swagger 文档
-- **Web 预览**: 内置 Markdown 文件浏览器和预览界面
+- **Web 界面**: React + Vite 构建的现代化文档转换界面
 - **OCR 识别**: Tesseract 本地 OCR + DeepSeek API 云端识别
 - **项目组织**: 每次转换生成独立项目，按时间戳命名
 
@@ -20,9 +20,27 @@
 git clone https://github.com/iyangming/doc2md.git
 cd doc2md
 
-# 安装依赖
-pip install -r requirements.txt
+# 安装后端依赖
+pip install -r doc2md/requirements.txt
+
+# 安装前端依赖 (可选)
+cd web && npm install && cd ..
 ```
+
+### 前端 (可选)
+
+```bash
+cd web
+npm install
+
+# 开发模式
+npm run dev
+
+# 构建生产版本
+npm run build
+```
+
+前端需要配合后端 API 使用，配置 `VITE_API_BASE_URL` 环境变量指向后端服务地址（默认: `http://localhost:8000`）。
 
 ### CLI 使用
 
@@ -58,6 +76,35 @@ docker build -t doc2md .
 docker run -p 8000:8000 doc2md
 ```
 
+## 项目结构
+
+```
+doc2md/
+├── api.py              # FastAPI 服务
+├── browser.py         # 文件浏览/预览
+├── cli.py             # CLI 工具
+├── config.py          # 配置管理
+├── models.py          # 数据模型
+├── ocr.py             # OCR 处理器
+├── processors/        # 文档处理器
+│   ├── base.py
+│   ├── docx.py
+│   ├── pdf.py
+│   ├── pptx.py
+│   └── xlsx.py
+├── static/            # 静态资源
+└── templates/        # HTML 模板
+
+web/                   # React 前端 (可选)
+├── src/
+│   ├── components/    # React 组件
+│   ├── hooks/         # 自定义 Hooks
+│   ├── types/         # TypeScript 类型
+│   └── App.tsx        # 主应用
+├── package.json
+└── vite.config.ts
+```
+
 ## API 端点
 
 | 端点 | 方法 | 说明 |
@@ -80,26 +127,6 @@ DEEPSEEK_API_BASE=https://api.deepseek.com/v1
 DEEPSEEK_OCR_THRESHOLD=0.8
 DEFAULT_OCR_MODE=full
 MAX_FILE_SIZE_MB=50
-```
-
-## 项目结构
-
-```
-doc2md/
-├── api.py              # FastAPI 服务
-├── browser.py         # 文件浏览/预览
-├── cli.py             # CLI 工具
-├── config.py          # 配置管理
-├── models.py          # 数据模型
-├── ocr.py             # OCR 处理器
-├── processors/        # 文档处理器
-│   ├── base.py
-│   ├── docx.py
-│   ├── pdf.py
-│   ├── pptx.py
-│   └── xlsx.py
-├── static/            # 静态资源
-└── templates/        # HTML 模板
 ```
 
 ## 输出结构
